@@ -1,0 +1,286 @@
+@page "/register/{EventId:int}"
+@rendermode InteractiveServer
+
+@inject EventService EventService
+@inject EventStateService EventStateService
+@inject NavigationManager Navigation
+
+<PageTitle>Event Registration - EventEase</PageTitle>
+
+@if (eventItem is null)
+{
+    <div class="not-found">
+        <h1>Event Not Found</h1>
+
+        <p>
+            The event you are trying to register for does not exist.
+        </p>
+
+        <button @onclick="GoToEvents">
+            Back to Events
+        </button>
+    </div>
+}
+else
+{
+    <div class="registration-container">
+
+        <div class="registration-header">
+            <h1>Register for Event</h1>
+
+            <h2>@eventItem.Title</h2>
+
+            <p>
+                @eventItem.Date.ToString("MMMM d, yyyy")
+                ·
+                @eventItem.Location
+            </p>
+        </div>
+
+        @if (registrationSuccessful)
+        {
+            <div class="success-message">
+                <h3>Registration Successful!</h3>
+
+                <p>
+                    Thank you, @registration.Name.
+                    You have successfully registered for
+                    <strong>@eventItem.Title</strong>.
+                </p>
+
+                <div class="success-actions">
+                    <button @onclick="GoToAttendance">
+                        View Attendance
+                    </button>
+
+                    <button @onclick="GoToEvents">
+                        Back to Events
+                    </button>
+                </div>
+            </div>
+        }
+        else if (eventItem.RegisteredCount >= eventItem.Capacity)
+        {
+            <p role="alert">
+                This event is full and can no longer accept registrations.
+            </p>
+
+            <button type="button" @onclick="GoToEvents">
+                Back to Events
+            </button>
+        }
+        else
+        {
+            @if (!string.IsNullOrWhiteSpace(registrationError))
+            {
+                <p role="alert">@registrationError</p>
+            }
+
+            <EditForm Model="registration"
+                      OnValidSubmit="HandleValidSubmit">
+
+                <DataAnnotationsValidator />
+
+                <ValidationSummary />
+
+                @if (!string.IsNullOrWhiteSpace(registrationError))
+                {
+                    <p class="registration-error" role="alert">
+                        @registrationError
+                    </p>
+                }
+
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+
+                    <InputText id="name"
+                               class="form-control"
+                               @bind-Value="registration.Name" />
+
+                    <ValidationMessage For="@(() => registration.Name)" />
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+
+                    <InputText id="email"
+                               class="form-control"
+                               @bind-Value="registration.Email" />
+
+                    <ValidationMessage For="@(() => registration.Email)" />
+                </div>
+
+                <div class="form-group">
+                    <label>Event</label>
+
+                    <input class="form-control"
+                           value="@eventItem.Title"
+                           readonly />
+                </div>
+
+                <div class="form-actions">
+
+                    <button type="submit"
+                            class="register-button">
+                        Complete Registration
+                    </button>
+
+                    <button type="button"
+                            class="cancel-button"
+                            @onclick="GoToEvents">
+                        Cancel
+                    </button>
+
+                </div>
+
+            </EditForm>
+        }
+
+    </div>
+}
+
+<style>
+
+    .registration-container {
+        max-width: 650px;
+        margin: 2rem auto;
+        padding: 2rem;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+    }
+
+    .registration-error {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border: 1px solid #dc2626;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .registration-header {
+        margin-bottom: 2rem;
+    }
+
+    .registration-header h1 {
+        margin-bottom: 0.5rem;
+    }
+
+    .registration-header h2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .registration-header p {
+        color: #666;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+
+    .form-actions,
+    .success-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    button {
+        border: none;
+        border-radius: 6px;
+        padding: 0.75rem 1.2rem;
+        cursor: pointer;
+    }
+
+    .register-button {
+        background: #2563eb;
+        color: white;
+    }
+
+    .cancel-button {
+        background: #e5e7eb;
+    }
+
+    .success-message {
+        padding: 1.5rem;
+        border-radius: 8px;
+        background: #ecfdf5;
+        border: 1px solid #10b981;
+    }
+
+    .success-message h3 {
+        margin-top: 0;
+    }
+
+    .not-found {
+        text-align: center;
+        padding: 4rem 1rem;
+    }
+
+</style>
+
+@code {
+
+    [Parameter]
+    public int EventId { get; set; }
+
+    private Event? eventItem;
+
+    private Registration registration = new();
+
+    private bool registrationSuccessful;
+
+    private string? registrationError;
+
+    protected override void OnParametersSet()
+    {
+        eventItem = EventService.GetEventById(EventId);
+        registration = new Registration { EventId = EventId };
+        registrationSuccessful = false;
+        registrationError = null;
+    }
+
+    private void HandleValidSubmit()
+    {
+        registrationError = null;
+
+        if (eventItem is null)
+        {
+            registrationError = "This event is no longer available.";
+            return;
+        }
+
+        if (!EventStateService.TryRegister(registration, out var error))
+        {
+            registrationError = error;
+            return;
+        }
+
+        registrationSuccessful = true;
+    }
+
+    private void GoToAttendance()
+    {
+        Navigation.NavigateTo("/attendance");
+    }
+
+    private void GoToEvents()
+    {
+        Navigation.NavigateTo("/events");
+    }
+}
+

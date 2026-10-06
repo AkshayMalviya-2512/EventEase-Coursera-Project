@@ -1,0 +1,16 @@
+# ---.NET Build Outputs --
+bin/
+obj/
+
+# ---IDE and Editor Files ---
+.vs/
+.user
+.userosscache
+.sln.docstates
+
+# ---VSCode Settings and Workspace ---
+.vscode/
+
+# ---USER Secret / Configuration Files ---
+appsettings.Development.json
+appsettings.json 

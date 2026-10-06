@@ -1,0 +1,61 @@
+@using EventEase.Models
+
+<article class="event-card">
+	<header>
+		<h2>@Event.Title</h2>
+		<time datetime="@Event.Date.ToString("yyyy-MM-dd")">
+			@Event.Date.ToString("MMMM d, yyyy")
+		</time>
+	</header>
+
+	<p>@Event.Description</p>
+
+	<dl>
+		<dt>Location</dt>
+		<dd>@Event.Location</dd>
+		<dt>Capacity</dt>
+		<dd>@Event.Capacity</dd>
+		<dt>Registered attendees</dt>
+		<dd>@Event.RegisteredCount</dd>
+	</dl>
+
+	<button type="button" @onclick="ViewDetailsAsync">View event details</button>
+</article>
+
+<style>
+	.event-card {
+		border: 1px solid #ddd;
+		border-radius: 0.5rem;
+		padding: 1rem;
+	}
+
+	.event-card dl {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 0.25rem 1rem;
+	}
+
+	.event-card dd {
+		margin: 0;
+	}
+</style>
+
+@code {
+	[Parameter, EditorRequired]
+	public Event Event { get; set; } = default!;
+
+	[Parameter]
+	public EventCallback<Event> OnViewDetails { get; set; }
+
+	[Parameter]
+	public bool IsSelected { get; set; }
+
+	[Parameter]
+	public EventCallback<bool> IsSelectedChanged { get; set; }
+
+	private async Task ViewDetailsAsync()
+	{
+		await IsSelectedChanged.InvokeAsync(true);
+		await OnViewDetails.InvokeAsync(Event);
+	}
+}

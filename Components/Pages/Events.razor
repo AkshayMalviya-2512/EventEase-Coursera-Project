@@ -1,0 +1,75 @@
+@page "/events"
+@rendermode InteractiveServer
+
+@inject EventService EventService
+@inject NavigationManager Navigation
+
+<PageTitle>Events - EventEase</PageTitle>
+
+<h1>Upcoming Events</h1>
+
+<p class="intro">
+    Discover upcoming events and register for the ones you'd like to attend.
+</p>
+
+@if (events.Count == 0)
+{
+    <p>No events are currently available.</p>
+}
+else
+{
+    <div class="events-grid">
+        @foreach (var eventItem in events)
+        {
+            <EventCard
+                Event="eventItem"
+                @bind-IsSelected="selectedState"
+                OnViewDetails="ViewEventDetails" />
+        }
+    </div>
+}
+
+@if (selectedEvent is not null)
+{
+    <div class="selected-event">
+        <strong>Selected event:</strong>
+        @selectedEvent.Title
+    </div>
+}
+
+<style>
+    .intro {
+        margin-bottom: 2rem;
+    }
+
+    .events-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .selected-event {
+        margin-top: 2rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background: #f0f8ff;
+    }
+</style>
+
+@code {
+    private List<Event> events = [];
+    private Event? selectedEvent;
+    private bool selectedState;
+
+    protected override void OnInitialized()
+    {
+        events = EventService.GetEvents();
+    }
+
+    private void ViewEventDetails(Event eventItem)
+    {
+        selectedEvent = eventItem;
+
+        Navigation.NavigateTo($"/event-details/{eventItem.Id}");
+    }
+}

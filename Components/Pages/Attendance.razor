@@ -1,0 +1,258 @@
+@page "/attendance"
+@rendermode InteractiveServer
+
+@inject EventService EventService
+@inject EventStateService EventStateService
+@inject NavigationManager Navigation
+
+<PageTitle>Attendance Tracker - EventEase</PageTitle>
+
+<h1>Attendance Tracker</h1>
+
+<p class="page-description">
+    View registered attendees and track their attendance.
+</p>
+
+@if (registrations.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No registrations yet</h2>
+
+        <p>
+            There are currently no registered attendees.
+        </p>
+
+        <button @onclick="GoToEvents">
+            Browse Events
+        </button>
+    </div>
+}
+else
+{
+    <div class="summary">
+        <div class="summary-card">
+            <span class="summary-label">Total Registrations</span>
+            <strong>@registrations.Count</strong>
+        </div>
+
+        <div class="summary-card">
+            <span class="summary-label">Present</span>
+            <strong>@presentCount</strong>
+        </div>
+
+        <div class="summary-card">
+            <span class="summary-label">Absent</span>
+            <strong>@(registrations.Count - presentCount)</strong>
+        </div>
+    </div>
+
+    <div class="attendance-list">
+
+        @foreach (var registration in registrations)
+        {
+            var eventItem = EventService.GetEventById(registration.EventId);
+
+            <article class="attendance-card">
+
+                <div class="attendee-information">
+
+                    <h2>@registration.Name</h2>
+
+                    <p class="email">
+                        @registration.Email
+                    </p>
+
+                    @if (eventItem is not null)
+                    {
+                        <p class="event-name">
+                            <strong>Event:</strong>
+                            @eventItem.Title
+                        </p>
+                    }
+
+                </div>
+
+                <div class="attendance-status">
+
+                    @if (registration.IsAttended)
+                    {
+                        <span class="status present">
+                            Present
+                        </span>
+
+                        <button class="mark-absent"
+                                @onclick="() => MarkAbsent(registration)">
+                            Mark Absent
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="status absent">
+                            Not Present
+                        </span>
+
+                        <button class="mark-present"
+                                @onclick="() => MarkPresent(registration)">
+                            Mark Present
+                        </button>
+                    }
+
+                </div>
+
+            </article>
+        }
+
+    </div>
+}
+
+<style>
+
+    .page-description {
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1.25rem;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+    }
+
+    .summary-label {
+        color: #666;
+    }
+
+    .summary-card strong {
+        font-size: 1.8rem;
+    }
+
+    .attendance-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .attendance-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+    }
+
+    .attendee-information h2 {
+        margin: 0 0 0.35rem;
+    }
+
+    .email {
+        color: #666;
+        margin: 0 0 0.5rem;
+    }
+
+    .event-name {
+        margin: 0;
+    }
+
+    .attendance-status {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .status {
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        font-weight: 600;
+    }
+
+    .present {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .absent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    button {
+        border: none;
+        border-radius: 6px;
+        padding: 0.65rem 1rem;
+        cursor: pointer;
+    }
+
+    .mark-present {
+        background: #2563eb;
+        color: white;
+    }
+
+    .mark-absent {
+        background: #e5e7eb;
+        color: #111827;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 1rem;
+        border: 1px dashed #ccc;
+        border-radius: 10px;
+    }
+
+    @@media (max-width: 700px) {
+        .summary {
+            grid-template-columns: 1fr;
+        }
+
+        .attendance-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .attendance-status {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+
+</style>
+
+@code {
+
+    private IReadOnlyList<Registration> registrations = [];
+
+    private int presentCount =>
+        registrations.Count(r => r.IsAttended);
+
+    protected override void OnInitialized()
+    {
+        registrations = EventStateService.GetRegistrations();
+    }
+
+    private void MarkPresent(Registration registration)
+    {
+        registration.IsAttended = true;
+    }
+
+    private void MarkAbsent(Registration registration)
+    {
+        registration.IsAttended = false;
+    }
+
+    private void GoToEvents()
+    {
+        Navigation.NavigateTo("/events");
+    }
+}

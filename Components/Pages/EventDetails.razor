@@ -1,0 +1,206 @@
+@page "/event-details/{Id:int}"
+@rendermode InteractiveServer
+
+@inject EventService EventService
+@inject NavigationManager Navigation
+
+<PageTitle>Event Details - EventEase</PageTitle>
+
+@if (eventItem is null)
+{
+    <div class="not-found">
+        <h1>Event Not Found</h1>
+        <p>The event you are looking for does not exist.</p>
+
+        <button @onclick="GoBack">
+            Back to Events
+        </button>
+    </div>
+}
+else
+{
+    <article class="event-details">
+
+        <div class="event-header">
+            <div>
+                <h1>@eventItem.Title</h1>
+
+                <p class="event-location">
+                    📍 @eventItem.Location
+                </p>
+            </div>
+
+            <span class="event-date">
+                @eventItem.Date.ToString("MMMM d, yyyy")
+            </span>
+        </div>
+
+        <div class="event-content">
+
+            <p class="description">
+                @eventItem.Description
+            </p>
+
+            <div class="event-information">
+
+                <div class="info-card">
+                    <strong>Capacity</strong>
+                    <span>@eventItem.Capacity</span>
+                </div>
+
+                <div class="info-card">
+                    <strong>Registered</strong>
+                    <span>@eventItem.RegisteredCount</span>
+                </div>
+
+                <div class="info-card">
+                    <strong>Available Seats</strong>
+                    <span>
+                        @(eventItem.Capacity - eventItem.RegisteredCount)
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="actions">
+
+                <button class="register-button"
+                        @onclick="RegisterForEvent">
+                    Register for this event
+                </button>
+
+                <button class="back-button"
+                        @onclick="GoBack">
+                    Back to Events
+                </button>
+
+            </div>
+
+        </div>
+    </article>
+}
+
+<style>
+    .event-details {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2rem;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+    }
+
+    .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 1.5rem;
+    }
+
+    .event-header h1 {
+        margin-bottom: 0.5rem;
+    }
+
+    .event-location {
+        margin: 0;
+        color: #666;
+    }
+
+    .event-date {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .event-content {
+        padding-top: 1.5rem;
+    }
+
+    .description {
+        line-height: 1.7;
+    }
+
+    .event-information {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .info-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+
+    .info-card span {
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+
+    .actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    button {
+        border: none;
+        border-radius: 6px;
+        padding: 0.75rem 1.2rem;
+        cursor: pointer;
+    }
+
+    .register-button {
+        background: #2563eb;
+        color: white;
+    }
+
+    .back-button {
+        background: #e5e7eb;
+        color: #111827;
+    }
+
+    .not-found {
+        text-align: center;
+        padding: 4rem 1rem;
+    }
+
+    @@media (max-width: 700px) {
+        .event-header {
+            flex-direction: column;
+        }
+
+        .event-information {
+            grid-template-columns: 1fr;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Event? eventItem;
+
+    protected override void OnParametersSet()
+    {
+        eventItem = EventService.GetEventById(Id);
+    }
+
+    private void RegisterForEvent()
+    {
+        Navigation.NavigateTo($"/register/{Id}");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/events");
+    }
+}
